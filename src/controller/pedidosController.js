@@ -1,88 +1,83 @@
 const db = require('../../config/db');
 
 // ############################################### LIST PEDIDO ################################################################
-function list(req, res) {
-  db.query(
-    `
-      SELECT
-      p.id,
-      p.pedhora,
-      p.reshora,
-      p.enthora,
-      p.fk_cliente,
-      p.valortotal,
-      p.fk_forpgto,
-      p.isentregue,
-      p.ispago,
-      c.nome AS cliente_nome,
-      c.logradouro AS cliente_logradouro,
-      c.apt AS cliente_apt,
-      c.torre AS cliente_torre
-      FROM pedidos p
-      JOIN clientes c ON p.fk_cliente = c.id
-      JOIN pedidoItens pi ON p.id = pi.fk_pedido
-      GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre;
-    `, (err, result) => {
-      
-    if (err) {
-      console.error('Erro na consulta:', err);
-      res.status(500).send('Erro interno no servidor');
+async function list(req, res) {
+  try {
+    const result = await db.query(
+      `
+        SELECT
+        p.id,
+        p.pedhora,
+        p.reshora,
+        p.enthora,
+        p.fk_cliente,
+        p.valortotal,
+        p.fk_forpgto,
+        p.isentregue,
+        p.ispago,
+        c.nome AS cliente_nome,
+        c.logradouro AS cliente_logradouro,
+        c.apt AS cliente_apt,
+        c.torre AS cliente_torre
+        FROM pedidos p
+        JOIN clientes c ON p.fk_cliente = c.id
+        JOIN pedidoItens pi ON p.id = pi.fk_pedido
+        GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre
+        ORDER BY p.id ASC;
+      `
+    );
 
-    } else {
-      let response = result.rows
-      let pedidoFormatado
-      let formattedResponse = []
+    const response = result.rows;
+    const formattedResponse = [];
 
-      response.forEach((pedido) => {
-        pedidoFormatado = {
-          id: pedido.id,
-          pedhora: pedido.pedhora,
-          reshora: pedido.reshora,
-          enthora: pedido.enthora,
-          fk_cliente: pedido.fk_cliente,
-          valortotal: pedido.valortotal,
-          fk_forpgto: pedido.fk_forpgto,
-          isentregue: pedido.isentregue,
-          ispago: pedido.ispago,
-          cliente: {
-            nome: pedido.cliente_nome,
-            logradouro: pedido.cliente_logradouro,
-            apt: pedido.cliente_apt,
-            torre: pedido.cliente_torre,
-            descricao: `${pedido.fk_cliente} - ${pedido.cliente_nome}`
-          },
-          pedidoItens: []
-        };
-        
-        db.query(
-          `
-            SELECT
-              pi.fk_produto,
-              pi.obs,
-              pr.nomeproduto,
-              pr.valor
-            FROM pedidoItens pi
-            JOIN produtos pr ON pi.fk_produto = pr.id
-            WHERE pi.fk_pedido = $1;
-          `,
-          [pedido.id],
-          (err, result) => {
-            if (err) {}
-            else {
-              result.rows.forEach((item) => {
-                item.descricao = `${item.fk_produto} - ${item.nomeproduto}`
-                pedidoFormatado.pedidoItens.push(item)
-              })
-            }
-            formattedResponse.push(pedidoFormatado)
-            res.json(formattedResponse);
-          }
-        );
-          
+    for (const pedido of response) {
+      const pedidoFormatado = {
+        id: pedido.id,
+        pedhora: pedido.pedhora,
+        reshora: pedido.reshora,
+        enthora: pedido.enthora,
+        fk_cliente: pedido.fk_cliente,
+        valortotal: pedido.valortotal,
+        fk_forpgto: pedido.fk_forpgto,
+        isentregue: pedido.isentregue,
+        ispago: pedido.ispago,
+        cliente: {
+          nome: pedido.cliente_nome,
+          logradouro: pedido.cliente_logradouro,
+          apt: pedido.cliente_apt,
+          torre: pedido.cliente_torre,
+          descricao: `${pedido.fk_cliente} - ${pedido.cliente_nome}`
+        },
+        pedidoItens: []
+      };
+
+      const resultItens = await db.query(
+        `
+          SELECT
+            pi.fk_produto,
+            pi.obs,
+            pr.nomeproduto,
+            pr.valor
+          FROM pedidoItens pi
+          JOIN produtos pr ON pi.fk_produto = pr.id
+          WHERE pi.fk_pedido = $1;
+        `,
+        [pedido.id]
+      );
+
+      resultItens.rows.forEach((item) => {
+        item.descricao = `${item.fk_produto} - ${item.nomeproduto}`;
+        pedidoFormatado.pedidoItens.push(item);
       });
 
+      formattedResponse.push(pedidoFormatado);
     }
-  });
+
+    res.json(formattedResponse);
+  } catch (error) {
+    console.error('Erro na consulta:', error);
+    res.status(500).send('Erro interno no servidor');
+  }
 }
 
 
@@ -99,11 +94,12 @@ async function newPedido(req, res) {
   const resultPedido = await db.query(
     `
     INSERT INTO pedidos (pedhora, reshora, enthora, fk_cliente, valortotal, fk_forpgto, isentregue, ispago)
-    VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4, $5, $6, $7)
+    VALUES (TO_CHAR(CURRENT_TIMESTAMP, 'HH24:MI')::time, $1, $2, $3, $4, $5, $6, $7)
     RETURNING id;
     `,
     [reshora, enthora, fk_cliente, valtot, fk_forpgto, isentregue, ispago]
   );
+  
 
   const pedidoId = resultPedido.rows[0].id
 
@@ -122,11 +118,10 @@ async function newPedido(req, res) {
 // ############################################### UPDATE PEDIDO ################################################################
 async function updatePedido(req, res) {
   try {
-    let { id, pedhora, reshora, enthora, fk_cliente, fk_forpgto, isentregue, ispago, pedidoItens } = req;
+    let { id, reshora, enthora, fk_cliente, fk_forpgto, isentregue, ispago, pedidoItens } = req;
 
     const valtot = await calcularValorTotalPedido(pedidoItens)
 
-    pedhora = pedhora !== '' ? pedhora : null;
     reshora = reshora !== '' ? reshora : null;
     enthora = enthora !== '' ? enthora : null;
 
@@ -134,10 +129,10 @@ async function updatePedido(req, res) {
     await db.query(
       `
       UPDATE pedidos
-      SET pedhora = $1, reshora = $2, enthora = $3, fk_cliente = $4, valortotal = $5, fk_forpgto = $6, isentregue = $7, ispago = $8
-      WHERE id = $9;
+      SET pedhora = $1, enthora = $2, fk_cliente = $3, valortotal = $4, fk_forpgto = $5, isentregue = $6, ispago = $7
+      WHERE id = $8;
       `,
-      [pedhora, reshora, enthora, fk_cliente, valtot, fk_forpgto, isentregue, ispago, id]
+      [ reshora, enthora, fk_cliente, valtot, fk_forpgto, isentregue, ispago, id]
     );
 
     // Exclui os itens antigos associados ao pedido
@@ -163,6 +158,7 @@ async function updatePedido(req, res) {
 }
 
 
+// ############################################### DELETAR PEDIDO ################################################################
 async function delPedido(req, res){
   await db.query(
     `

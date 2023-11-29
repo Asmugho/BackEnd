@@ -22,6 +22,9 @@ router.post('/delPedido', req => { pedido.delPedido(req.body) });
 
 // PRODUTOS
 router.get('/listProdutos', produto.list);
+router.post('/updateProduto', req => { produto.updateProduto(req.body) });
+router.post('/newProduto', req => { produto.newProduto(req.body) });
+router.post('/delProduto', req => { produto.delProduto(req.body) });
 
 // FORPGTO
 router.get('/listForPgtos', forpgto.list);
