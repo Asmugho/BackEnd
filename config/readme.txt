@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS public.pedidos
     fk_forpgto INTEGER,
     isentregue BOOLEAN,
     ispago BOOLEAN,
+    peddata date,
     CONSTRAINT fk_cliente FOREIGN KEY (fk_cliente) REFERENCES public.clientes(id),
     CONSTRAINT fk_forpgto FOREIGN KEY (fk_forpgto) REFERENCES public.forpgto(id)
 );
