@@ -111,6 +111,8 @@ async function newPedido(req, res) {
 
   const valtot = await calcularValorTotalPedido(pedidoItens)
 
+  console.log(valtot)
+
   pedhora = pedhora != '' ? pedhora : null
   reshora = reshora != '' ? reshora : null
   enthora = enthora != '' ? enthora : null
@@ -226,7 +228,7 @@ async function calcularValorTotalPedido(pedidoItens) {
     // Calcula o valor total do pedido com base nos preços dos produtos
     const valorTotal = pedidoItens.reduce((total, item) => {
       const precoProduto = precosProdutos[item.fk_produto] || 0;
-      return total + precoProduto;
+      return total + precoProduto
     }, 0);
 
     return valorTotal;
