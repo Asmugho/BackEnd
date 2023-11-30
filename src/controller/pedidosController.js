@@ -3,29 +3,53 @@ const db = require('../../config/db');
 // ############################################### LIST PEDIDO ################################################################
 async function list(req, res) {
   try {
+    // const result = await db.query(
+    //   `
+    //     SELECT
+    //     p.id,
+    //     p.pedhora,
+    //     p.reshora,
+    //     p.enthora,
+    //     p.fk_cliente,
+    //     p.valortotal,
+    //     p.fk_forpgto,
+    //     p.isentregue,
+    //     p.ispago,
+    //     c.nome AS cliente_nome,
+    //     c.logradouro AS cliente_logradouro,
+    //     c.apt AS cliente_apt,
+    //     c.torre AS cliente_torre
+    //     FROM pedidos p
+    //     JOIN clientes c ON p.fk_cliente = c.id
+    //     JOIN pedidoItens pi ON p.id = pi.fk_pedido
+    //     GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre
+    //     ORDER BY p.id ASC;
+    //   `
+    // );
+
     const result = await db.query(
       `
         SELECT
-        p.id,
-        p.pedhora,
-        p.reshora,
-        p.enthora,
-        p.fk_cliente,
-        p.valortotal,
-        p.fk_forpgto,
-        p.isentregue,
-        p.ispago,
-        c.nome AS cliente_nome,
-        c.logradouro AS cliente_logradouro,
-        c.apt AS cliente_apt,
-        c.torre AS cliente_torre
+          p.id,
+          p.pedhora,
+          p.reshora,
+          p.enthora,
+          p.fk_cliente,
+          p.valortotal,
+          p.fk_forpgto,
+          p.isentregue,
+          p.ispago,
+          c.nome AS cliente_nome,
+          c.logradouro AS cliente_logradouro,
+          c.apt AS cliente_apt,
+          c.torre AS cliente_torre
         FROM pedidos p
         JOIN clientes c ON p.fk_cliente = c.id
         JOIN pedidoItens pi ON p.id = pi.fk_pedido
         GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre
         ORDER BY p.id ASC;
       `
-    );
+    )
 
     const response = result.rows;
     const formattedResponse = [];
@@ -112,9 +136,11 @@ async function newPedido(req, res) {
       [item.fk_produto, pedidoId, item.obs]
     );
   })
+
+  res.status(200).send('Transação Completa');
 }
 
- 
+
 // ############################################### UPDATE PEDIDO ################################################################
 async function updatePedido(req, res) {
   try {
@@ -155,6 +181,7 @@ async function updatePedido(req, res) {
       );
     }
   } catch (error) {}
+  res.status(200).send('Transação Completa');
 }
 
 
@@ -175,6 +202,7 @@ async function delPedido(req, res){
     `,
     [req.id]
   )
+  res.status(200).send('Transação Completa');
 }
 
 async function calcularValorTotalPedido(pedidoItens) {

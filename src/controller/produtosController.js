@@ -40,6 +40,7 @@ async function newProduto(req, res) {
     `,
     [nomeproduto, valor, isativo]
   );
+  res.status(200).send('Transação Completa');
 }
 
 
@@ -60,6 +61,7 @@ async function updateProduto(req, res) {
     );
 
   } catch (error) {}
+  res.status(200).send('Transação Completa');
 }
 
 
@@ -72,6 +74,7 @@ async function delProduto(req, res){
     `,
     [req.id]
   )
+  res.status(200).send('Transação Completa');
 }
 
 // Outras funções relacionadas ao banco de dados podem ser adicionadas aqui

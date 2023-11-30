@@ -1,24 +1,23 @@
-// clientesController.js
 const db = require('../../config/db');
 
-// Exemplo de função que busca todos os clientes no banco de dados
+// Listar Formas de Pagamento
 function list(req, res) {
-  db.query('SELECT * FROM forpgto', (err, result) => {
+  db.query('SELECT * FROM forpgto ORDER BY id', (err, result) => {
     if (err) {
       console.error('Erro na consulta:', err);
       res.status(500).send('Erro interno no servidor');
     } else {
       let response = result.rows
-      let forpgtoFormatado
+      let formaPagamentoFormatada
       let formattedResponse = []
 
-      response.forEach((forma) => {
-        forpgtoFormatado = {
-          id: forma.id,
-          nome: forma.nome,
-          descricao: `${forma.id} - ${forma.nome}`
+      response.forEach((formaPagamento) => {
+        formaPagamentoFormatada = {
+          id: formaPagamento.id,
+          nome: formaPagamento.nome,
+          descricao: `${formaPagamento.id} - ${formaPagamento.nome}`
         };
-        formattedResponse.push(forpgtoFormatado)
+        formattedResponse.push(formaPagamentoFormatada)
       });
 
       res.json(formattedResponse);
@@ -26,10 +25,68 @@ function list(req, res) {
   });
 }
 
-// Outras funções relacionadas ao banco de dados podem ser adicionadas aqui
+// Criar Forma de Pagamento
+async function newForPgto(req, res) {
+  let { id, nome } = req;
 
-// Exporte as funções para uso em outros módulos
+  const result = await db.query(
+    `
+    INSERT INTO forpgto (nome)
+    VALUES ($1)
+    RETURNING id;
+    `,
+    [nome]
+  );
+  res.status(200).send('Transação Completa');
+}
+
+// Atualizar Forma de Pagamento
+async function updateForPgto(req, res) {
+  try {
+    let { id, nome } = req;
+
+    // Atualiza os dados da forma de pagamento
+    await db.query(
+      `
+      UPDATE forpgto
+      SET nome = $1
+      WHERE id = $2;
+      `,
+      [nome, id]
+    );
+
+    // Você pode adicionar mais lógica aqui conforme necessário
+
+  } catch (error) {
+    console.error('Erro na atualização da forma de pagamento:', error);
+    res.status(500).send('Erro interno no servidor');
+  }
+  res.status(200).send('Transação Completa');
+}
+
+// Deletar Forma de Pagamento
+async function delForPgto(req, res) {
+  try {
+    await db.query(
+      `
+      DELETE FROM forpgto
+      WHERE id = $1;
+      `,
+      [req.id]
+    );
+
+    // Você pode adicionar mais lógica aqui conforme necessário
+
+  } catch (error) {
+    console.error('Erro na exclusão da forma de pagamento:', error);
+    res.status(500).send('Erro interno no servidor');
+  }
+  res.status(200).send('Transação Completa');
+}
+
 module.exports = {
   list,
-  // Adicione outras funções aqui
+  newForPgto,
+  updateForPgto,
+  delForPgto,
 };
