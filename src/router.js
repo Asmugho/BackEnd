@@ -16,7 +16,7 @@ router.post('/newCliente', (req, res) => { cliente.newCliente(req.body, res) });
 router.post('/delCliente', (req, res) => { cliente.delCliente(req.body, res) });
 
 // PEDIDOS
-router.get('/listPedidos', pedido.list);
+router.get('/listPedidos', (req, res)  => { pedido.list(req, res) });
 router.post('/updatePedido', (req, res)  => { pedido.updatePedido(req.body, res) });
 router.post('/newPedido', (req, res)  => { pedido.newPedido(req.body, res) });
 router.post('/delPedido', (req, res)  => { pedido.delPedido(req.body, res) });

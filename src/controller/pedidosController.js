@@ -2,54 +2,41 @@ const db = require('../../config/db');
 
 // ############################################### LIST PEDIDO ################################################################
 async function list(req, res) {
+  const filtro1 = req.query.filtro1 < req.query.filtro2 ? req.query.filtro1 : req.query.filtro2
+  const filtro2 = req.query.filtro1 > req.query.filtro2 ? req.query.filtro1 : req.query.filtro2
+  
   try {
-    // const result = await db.query(
-    //   `
-    //     SELECT
-    //     p.id,
-    //     p.pedhora,
-    //     p.reshora,
-    //     p.enthora,
-    //     p.fk_cliente,
-    //     p.valortotal,
-    //     p.fk_forpgto,
-    //     p.isentregue,
-    //     p.ispago,
-    //     c.nome AS cliente_nome,
-    //     c.logradouro AS cliente_logradouro,
-    //     c.apt AS cliente_apt,
-    //     c.torre AS cliente_torre
-    //     FROM pedidos p
-    //     JOIN clientes c ON p.fk_cliente = c.id
-    //     JOIN pedidoItens pi ON p.id = pi.fk_pedido
-    //     GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre
-    //     ORDER BY p.id ASC;
-    //   `
-    // );
-
-    const result = await db.query(
-      `
-        SELECT
-          p.id,
-          p.pedhora,
-          p.reshora,
-          p.enthora,
-          p.fk_cliente,
-          p.valortotal,
-          p.fk_forpgto,
-          p.isentregue,
-          p.ispago,
-          c.nome AS cliente_nome,
-          c.logradouro AS cliente_logradouro,
-          c.apt AS cliente_apt,
-          c.torre AS cliente_torre
-        FROM pedidos p
-        JOIN clientes c ON p.fk_cliente = c.id
-        JOIN pedidoItens pi ON p.id = pi.fk_pedido
-        GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre
-        ORDER BY p.id ASC;
-      `
-    )
+    let query = `
+      SELECT
+        p.id,
+        p.peddata,
+        p.pedhora,
+        p.reshora,
+        p.enthora,
+        p.fk_cliente,
+        p.valortotal,
+        p.fk_forpgto,
+        p.isentregue,
+        p.ispago,
+        c.nome AS cliente_nome,
+        c.logradouro AS cliente_logradouro,
+        c.apt AS cliente_apt,
+        c.torre AS cliente_torre
+      FROM pedidos p
+      JOIN clientes c ON p.fk_cliente = c.id
+      JOIN pedidoItens pi ON p.id = pi.fk_pedido 
+    `
+  if (filtro1 && filtro2) {
+    if (filtro1 == filtro2) {
+      query += `WHERE p.peddata = '${filtro2}' `
+    }
+    else {
+      query += `WHERE p.peddata BETWEEN '${filtro1}' AND '${filtro2}' `
+    }
+  }
+  query += `GROUP BY p.id, c.nome, c.logradouro, c.apt, c.torre ORDER BY p.id ASC;`
+            
+    const result = await db.query(query)
 
     const response = result.rows;
     const formattedResponse = [];
@@ -57,6 +44,7 @@ async function list(req, res) {
     for (const pedido of response) {
       const pedidoFormatado = {
         id: pedido.id,
+        peddata: pedido.peddata,
         pedhora: pedido.pedhora,
         reshora: pedido.reshora,
         enthora: pedido.enthora,
@@ -119,8 +107,8 @@ async function newPedido(req, res) {
 
   const resultPedido = await db.query(
     `
-    INSERT INTO pedidos (pedhora, reshora, enthora, fk_cliente, valortotal, fk_forpgto, isentregue, ispago)
-    VALUES (TO_CHAR(CURRENT_TIMESTAMP, 'HH24:MI')::time, $1, $2, $3, $4, $5, $6, $7)
+    INSERT INTO pedidos (pedhora, reshora, enthora, fk_cliente, valortotal, fk_forpgto, isentregue, ispago, peddata)
+    VALUES (TO_CHAR(CURRENT_TIMESTAMP, 'HH24:MI')::time, $1, $2, $3, $4, $5, $6, $7, CURRENT_DATE)
     RETURNING id;
     `,
     [reshora, enthora, fk_cliente, valtot, fk_forpgto, isentregue, ispago]
